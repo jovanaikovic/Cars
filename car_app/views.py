@@ -16,3 +16,12 @@ class VehicleList(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class VehicleDetail(APIView):
+    def get(self, request, pk):
+        try:
+            vehicle = Vehicle.objects.get(pk=pk)
+            serializer = VehicleSerializer(vehicle)
+            return Response(serializer.data)
+        except Vehicle.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)

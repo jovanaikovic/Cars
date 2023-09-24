@@ -29,3 +29,4 @@ class MyUserSerializer(serializers.ModelSerializer):
             "email",
             
         ]
+
