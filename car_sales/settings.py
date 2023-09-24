@@ -26,6 +26,7 @@ SECRET_KEY = 'django-insecure-yh1^co$j)i334*vyz9uyku#=28_rsb!)0d+efa%c_p*57@6eop
 DEBUG = True
 
 ALLOWED_HOSTS = []
+AUTH_USER_MODEL = "car_app.MyUser"
 
 
 # Application definition
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'car_app',
 ]
 
 MIDDLEWARE = [
