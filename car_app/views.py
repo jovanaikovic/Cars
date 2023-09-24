@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Vehicle
 from .serializers import VehicleSerializer
+from .serializers import MyUserSerializer
+from .models import MyUser
 
 class VehicleList(APIView):
 
@@ -48,3 +50,22 @@ class VehicleDetail(APIView):
 
         vehicle.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class UserList(APIView):
+    def get(self, request):
+        users = MyUser.objects.all()
+        serializer = MyUserSerializer(users, many=True)
+        return Response(serializer.data)
+    
+class UserDetail(APIView):
+    def get(self, request, pk):
+        try:
+            user = MyUser.objects.get(pk=pk)
+            user_serializer = MyUserSerializer(user)
+            vehicles = Vehicle.objects.filter(owner=user)
+            vehicle_serializer = VehicleSerializer(vehicles, many=True)
+            return Response({
+                'vehicles': vehicle_serializer.data
+            })
+        except MyUser.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)

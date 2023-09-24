@@ -23,6 +23,8 @@ from rest_framework_simplejwt.views import (
 from rest_framework_simplejwt.views import TokenVerifyView
 from car_app.views import VehicleList
 from car_app.views import VehicleDetail
+from car_app.views import UserList
+from car_app.views import UserDetail
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,4 +33,7 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('cars/', VehicleList.as_view(), name='vehicle-list'),
     path('cars/<int:pk>/', VehicleDetail.as_view(), name='vehicle-detail'),
+    path('users/', UserList.as_view(), name='user-list'),
+    path('user/<int:pk>/', UserDetail.as_view(), name='user-detail'),
 ]
+
