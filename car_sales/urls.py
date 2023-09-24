@@ -21,12 +21,12 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from rest_framework_simplejwt.views import TokenVerifyView
-from car_app.views import VehicleListView
+from car_app.views import VehicleList
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    path('cars/', VehicleListView.as_view(), name='vehicle-list'),
+     path('cars/', VehicleList.as_view(), name='vehicle-list'),
 ]

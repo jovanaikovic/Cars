@@ -10,7 +10,7 @@ class VehicleSerializer(serializers.ModelSerializer):
             "vehicle_make",
             "vehicle_model",
             "year_of_manufacturing",
-            "description"
+            "description",
             "fuel_type",
             "transmission",
             "door_count",
