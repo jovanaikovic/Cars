@@ -71,3 +71,5 @@ class UserDetail(APIView):
             })
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
