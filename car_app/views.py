@@ -5,6 +5,7 @@ from .models import Vehicle
 from .serializers import VehicleSerializer
 
 class VehicleList(APIView):
+
     def get(self, request):
         vehicles = Vehicle.objects.all()
         serializer = VehicleSerializer(vehicles, many=True)
@@ -18,6 +19,7 @@ class VehicleList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class VehicleDetail(APIView):
+
     def get(self, request, pk):
         try:
             vehicle = Vehicle.objects.get(pk=pk)
@@ -25,3 +27,24 @@ class VehicleDetail(APIView):
             return Response(serializer.data)
         except Vehicle.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, pk):
+        try:
+            vehicle = Vehicle.objects.get(pk=pk)
+        except Vehicle.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = VehicleSerializer(vehicle, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        try:
+            vehicle = Vehicle.objects.get(pk=pk)
+        except Vehicle.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        vehicle.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
