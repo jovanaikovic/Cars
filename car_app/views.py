@@ -5,8 +5,10 @@ from .models import Vehicle
 from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
+from .permissions import ReadOnlyOrAuthenticated
 
 class VehicleList(APIView):
+    permission_classes = [ReadOnlyOrAuthenticated]
 
     def get(self, request):
         vehicles = Vehicle.objects.all()
