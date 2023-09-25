@@ -6,9 +6,12 @@ from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
 from .permissions import ReadOnlyOrAuthenticated
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 class VehicleList(APIView):
-    permission_classes = [ReadOnlyOrAuthenticated]
+    authentication_classes = [SessionAuthentication]  # Add this line
+    permission_classes = [IsAuthenticated, ReadOnlyOrAuthenticated]
 
     def get(self, request):
         vehicles = Vehicle.objects.all()
@@ -23,7 +26,8 @@ class VehicleList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class VehicleDetail(APIView):
-
+    authentication_classes = [SessionAuthentication]  # Add this line
+    permission_classes = [IsAuthenticated, ReadOnlyOrAuthenticated]
     def get(self, request, pk):
         try:
             vehicle = Vehicle.objects.get(pk=pk)
@@ -71,5 +75,6 @@ class UserDetail(APIView):
             })
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+    
 
 

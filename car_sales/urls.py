@@ -38,7 +38,5 @@ urlpatterns = [
     path('car/<int:pk>/', VehicleDetail.as_view(), name='vehicle-detail'),
     path('users/', UserList.as_view(), name='user-list'),
     path('user/<int:pk>/', UserDetail.as_view(), name='user-detail'),
-    path('accounts/', include('django.contrib.auth.urls')),
-
 ]
 
