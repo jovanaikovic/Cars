@@ -5,13 +5,13 @@ from .models import Vehicle
 from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
-from .permissions import ReadOnlyOrAuthenticated
+# from .permissions import ReadOnlyOrAuthenticated
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 class VehicleList(APIView):
-    authentication_classes = [SessionAuthentication]  # Add this line
-    permission_classes = [IsAuthenticated, ReadOnlyOrAuthenticated]
+    authentication_classes = [SessionAuthentication] 
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
         vehicles = Vehicle.objects.all()
@@ -26,8 +26,8 @@ class VehicleList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class VehicleDetail(APIView):
-    authentication_classes = [SessionAuthentication]  # Add this line
-    permission_classes = [IsAuthenticated, ReadOnlyOrAuthenticated]
+    authentication_classes = [SessionAuthentication] 
+    permission_classes = [IsAuthenticatedOrReadOnly]
     def get(self, request, pk):
         try:
             vehicle = Vehicle.objects.get(pk=pk)
