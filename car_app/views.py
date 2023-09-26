@@ -6,11 +6,11 @@ from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
 # from .permissions import ReadOnlyOrAuthenticated
-from rest_framework.authentication import SessionAuthentication
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 class VehicleList(APIView):
-    authentication_classes = [SessionAuthentication] 
+    authentication_classes = [SessionAuthentication, TokenAuthentication] 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
