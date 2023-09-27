@@ -29,8 +29,18 @@ class Vehicle(models.Model):
         ('DSG' , 'DSG'),
         # Add more choices as needed
     ]
+
+    SEAT_CHOICES = [
+        ('2', '2'),
+        ('4', '4'),
+        ('5','5'),
+        ('6','6'),
+        ('7','7'),
+        ('11', '11'),
+    ]
     superuser = get_user_model().objects.get(username='admin')
 
+    image = models.ImageField(upload_to='vehicle_images', null=True)
     vehicle_make = models.CharField(max_length=100)
     vehicle_model = models.CharField(max_length=100)
     year_of_manufacturing = models.PositiveIntegerField()
@@ -38,6 +48,7 @@ class Vehicle(models.Model):
     fuel_type = models.CharField(max_length=100, choices=FUEL_CHOICES)
     transmission = models.CharField(max_length=100, choices=TRANSMISSION_CHOICES)
     door_count = models.PositiveIntegerField()
+    seat_number = models.IntegerField(default=5, choices = SEAT_CHOICES)
     vehicle_price = models.DecimalField(max_digits=10, decimal_places=2)
     owner = models.ForeignKey(
         get_user_model(),
