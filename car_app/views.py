@@ -1,13 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status, generics, permissions
 from .models import Vehicle
 from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
-# from .permissions import ReadOnlyOrAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.exceptions import PermissionDenied
+from django.contrib.auth import get_user_model
 
 class CheapestCarView(generics.RetrieveAPIView):
     queryset = Vehicle.objects.all().order_by('vehicle_price').first()  # Retrieve the car with the lowest price
@@ -89,5 +90,27 @@ class UserDetail(APIView):
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
     
+class AdminPageView(generics.ListCreateAPIView):
+    queryset = Vehicle.objects.all()
+    serializer_class = VehicleSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied("You don't have permission to access this view.")
+        return super().get(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+class UserListView(generics.ListAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = MyUserSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+class UserCreateView(generics.CreateAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = MyUserSerializer
+    permission_classes = [permissions.IsAdminUser]
 
 
