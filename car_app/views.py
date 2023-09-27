@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics
 from .models import Vehicle
 from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
@@ -8,6 +8,11 @@ from .models import MyUser
 # from .permissions import ReadOnlyOrAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
+class NewestCarsView(generics.ListAPIView):
+    queryset = Vehicle.objects.all().order_by('-id')[:10]  # Retrieve the 10 newest cars
+    serializer_class = VehicleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class VehicleList(APIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication] 

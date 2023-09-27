@@ -21,7 +21,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from rest_framework_simplejwt.views import TokenVerifyView
-from car_app.views import VehicleList
+from car_app.views import VehicleList, NewestCarsView
 from car_app.views import VehicleDetail
 from car_app.views import UserList
 from car_app.views import UserDetail
@@ -30,6 +30,7 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', NewestCarsView.as_view(), name='newest-cars'),
     path("api-auth/", include("rest_framework.urls")),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
