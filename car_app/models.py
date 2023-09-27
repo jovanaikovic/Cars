@@ -12,7 +12,9 @@ def get_default_owner():
 
 
 class MyUser(AbstractUser):
-    pass
+    # position = models.CharField(max_length=50, blank = False, null=False)
+   pass
+
 
 class Vehicle(models.Model):
 

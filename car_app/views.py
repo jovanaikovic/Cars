@@ -9,6 +9,14 @@ from .models import MyUser
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
+class CheapestCarView(generics.RetrieveAPIView):
+    queryset = Vehicle.objects.all().order_by('vehicle_price').first()  # Retrieve the car with the lowest price
+    serializer_class = VehicleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    lookup_field = 'pk'
+    def get_object(self):
+        return self.queryset 
+
 class NewestCarsView(generics.ListAPIView):
     queryset = Vehicle.objects.all().order_by('-id')[:10]  # Retrieve the 10 newest cars
     serializer_class = VehicleSerializer
