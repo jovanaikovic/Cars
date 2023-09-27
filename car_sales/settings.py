@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-yh1^co$j)i334*vyz9uyku#=28_rsb!)0d+efa%c_p*57@6eop
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['4d73-109-228-96-190.ngrok-free.app', '127.0.0.1',
+                 'http://jovanaikovic.pythonanywhere.com']
 AUTH_USER_MODEL = "car_app.MyUser"
 
 
