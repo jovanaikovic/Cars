@@ -113,4 +113,10 @@ class UserCreateView(generics.CreateAPIView):
     serializer_class = MyUserSerializer
     permission_classes = [permissions.IsAdminUser]
 
+    def create(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied("You don't have permission to create new users.")
+
+        return super().create(request, *args, **kwargs)
+
 
