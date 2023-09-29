@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['4d73-109-228-96-190.ngrok-free.app', '127.0.0.1',
                  'http://jovanaikovic.pythonanywhere.com']
+
 AUTH_USER_MODEL = "car_app.MyUser"
 
 

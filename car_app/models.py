@@ -12,8 +12,9 @@ def get_default_owner():
 
 
 class MyUser(AbstractUser):
-    # position = models.CharField(max_length=50, blank = False, null=False)
-    pass
+    position = models.CharField(max_length=50, blank = True, null= False)
+    img = models.ImageField(upload_to='user-images', null=True)
+
 
 
 class Vehicle(models.Model):
@@ -40,7 +41,6 @@ class Vehicle(models.Model):
         ('7','7'),
         ('11', '11'),
     ]
-    superuser = get_user_model().objects.get(username='admin')
 
     image = models.ImageField(upload_to='vehicle_images', null=True)
     vehicle_make = models.CharField(max_length=100)

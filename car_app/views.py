@@ -10,8 +10,10 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 
+
+
 class CheapestCarView(generics.RetrieveAPIView):
-    queryset = Vehicle.objects.all().order_by('vehicle_price').first()  # Retrieve the car with the lowest price
+    queryset = Vehicle.objects.all().order_by('vehicle_price').first() 
     serializer_class = VehicleSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'
@@ -89,6 +91,11 @@ class UserDetail(APIView):
             })
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        
+    def delete(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied("You don't have permission to delete users.")
+        return super().delete(request, *args, **kwargs)
     
 class AdminPageView(generics.ListCreateAPIView):
     queryset = Vehicle.objects.all()
@@ -118,5 +125,7 @@ class UserCreateView(generics.CreateAPIView):
             raise PermissionDenied("You don't have permission to create new users.")
 
         return super().create(request, *args, **kwargs)
+    
+    
 
 

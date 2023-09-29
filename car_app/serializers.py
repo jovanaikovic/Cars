@@ -24,10 +24,11 @@ class VehicleSerializer(serializers.ModelSerializer):
 
 class MyUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    is_superuser = serializers.ReadOnlyField()
 
     class Meta:
         model = get_user_model()
-        fields = ["id", "username", "email", "first_name", "last_name", "password"]
+        fields = ["id", "username", "email", "first_name", "last_name", "password", "is_superuser"]
         extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
