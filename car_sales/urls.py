@@ -23,7 +23,6 @@ from rest_framework_simplejwt.views import (
 from rest_framework_simplejwt.views import TokenVerifyView
 from car_app.views import VehicleList, NewestCarsView, CheapestCarView, AdminPageView
 from car_app.views import VehicleDetail, UserListView, UserCreateView
-from car_app.views import UserList
 from car_app.views import UserDetail
 from django.contrib.auth import views as auth_views
 
@@ -34,12 +33,13 @@ urlpatterns = [
     path('cheapest-car', CheapestCarView.as_view(), name = 'cheapest-car'),
     path('', NewestCarsView.as_view(), name='newest-cars'),
     path("api-auth/", include("rest_framework.urls")),
+    #Token url-s
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    #-----------
     path('cars/', VehicleList.as_view(), name='vehicle-list'),
     path('car/<int:pk>/', VehicleDetail.as_view(), name='vehicle-detail'),
-    path('users/', UserList.as_view(), name='user-list'),
     path('user/<int:pk>/', UserDetail.as_view(), name='user-detail'),
     path('admin/', AdminPageView.as_view(), name='admin-page'),
     path('admin/users/', UserListView.as_view(), name='admin-user-list'),

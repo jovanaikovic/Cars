@@ -10,21 +10,24 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 
-
-
+#Cheapest car for the right side banner
 class CheapestCarView(generics.RetrieveAPIView):
     queryset = Vehicle.objects.all().order_by('vehicle_price').first() 
     serializer_class = VehicleSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'
     def get_object(self):
-        return self.queryset 
+        return self.queryset
+#----------------------------------------
 
+#Newest 10 cars for the home page slider
 class NewestCarsView(generics.ListAPIView):
-    queryset = Vehicle.objects.all().order_by('-id')[:10]  # Retrieve the 10 newest cars
+    queryset = Vehicle.objects.all().order_by('-id')[:10]
     serializer_class = VehicleSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+#----------------------------------------
 
+#All cars created on the website
 class VehicleList(APIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication] 
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -34,13 +37,16 @@ class VehicleList(APIView):
         serializer = VehicleSerializer(vehicles, many=True)
         return Response(serializer.data)
 
+#Not sure if post will be defined here still, but staying for now
     def post(self, request):
         serializer = VehicleSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+#---------------------------------------------
+
+#Vehicle details, who created it and patch / delete options, unauthorized is read only
 class VehicleDetail(APIView):
     authentication_classes = [SessionAuthentication] 
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -72,13 +78,10 @@ class VehicleDetail(APIView):
 
         vehicle.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
-class UserList(APIView):
-    def get(self, request):
-        users = MyUser.objects.all()
-        serializer = MyUserSerializer(users, many=True)
-        return Response(serializer.data)
-    
+#------------------------------------
+
+#Shows all cars one user created, should be a full user view to return also the data about the user itself.
+#Should be invisible to non authorized user.
 class UserDetail(APIView):
     def get(self, request, pk):
         try:
@@ -96,7 +99,9 @@ class UserDetail(APIView):
         if not request.user.is_superuser:
             raise PermissionDenied("You don't have permission to delete users.")
         return super().delete(request, *args, **kwargs)
-    
+#-------------------------------------------
+
+#Not sure why it was necesarry, but will check
 class AdminPageView(generics.ListCreateAPIView):
     queryset = Vehicle.objects.all()
     serializer_class = VehicleSerializer
@@ -109,12 +114,17 @@ class AdminPageView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save()
+#---------------------------------------------
 
+#List of all users, should be visible only to logged in users, on normal
+#users list admin shouldnt be visible
 class UserListView(generics.ListAPIView):
     queryset = get_user_model().objects.all()
     serializer_class = MyUserSerializer
     permission_classes = [permissions.IsAdminUser]
+#---------------------------------------------
 
+#User creation for admin
 class UserCreateView(generics.CreateAPIView):
     queryset = get_user_model().objects.all()
     serializer_class = MyUserSerializer
@@ -125,6 +135,7 @@ class UserCreateView(generics.CreateAPIView):
             raise PermissionDenied("You don't have permission to create new users.")
 
         return super().create(request, *args, **kwargs)
+#--------------------------------------------
     
     
 
