@@ -6,7 +6,7 @@ from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 
@@ -37,13 +37,6 @@ class VehicleList(APIView):
         serializer = VehicleSerializer(vehicles, many=True)
         return Response(serializer.data)
 
-#Not sure if post will be defined here still, but staying for now
-    def post(self, request):
-        serializer = VehicleSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 #---------------------------------------------
 
 #Vehicle details, who created it and patch / delete options, unauthorized is read only
@@ -135,6 +128,18 @@ class UserCreateView(generics.CreateAPIView):
             raise PermissionDenied("You don't have permission to create new users.")
 
         return super().create(request, *args, **kwargs)
+#----------------------------------------------
+    
+#Not sure if post will be defined here still, but staying for now
+class VehicleCreateView(APIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication] 
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = VehicleSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
     

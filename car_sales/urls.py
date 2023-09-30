@@ -22,7 +22,7 @@ from rest_framework_simplejwt.views import (
 )
 from rest_framework_simplejwt.views import TokenVerifyView
 from car_app.views import VehicleList, NewestCarsView, CheapestCarView, AdminPageView
-from car_app.views import VehicleDetail, UserListView, UserCreateView
+from car_app.views import VehicleDetail, UserListView, UserCreateView, VehicleCreateView
 from car_app.views import UserDetail
 from django.contrib.auth import views as auth_views
 
@@ -44,5 +44,6 @@ urlpatterns = [
     path('admin/', AdminPageView.as_view(), name='admin-page'),
     path('admin/users/', UserListView.as_view(), name='admin-user-list'),
     path('admin/users/create/', UserCreateView.as_view(), name='admin-user-create'),
+    path('cars/create', VehicleCreateView.as_view(), name='vehicle-list'),
 ]
 
