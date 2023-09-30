@@ -28,14 +28,34 @@ class NewestCarsView(generics.ListAPIView):
 #----------------------------------------
 
 #All cars created on the website
-class VehicleList(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication] 
+class VehicleList(generics.ListAPIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = VehicleSerializer
 
-    def get(self, request):
-        vehicles = Vehicle.objects.all()
-        serializer = VehicleSerializer(vehicles, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        # Retrieve filter parameters from the request
+        make = self.request.query_params.get('make', None)
+        fuel_type = self.request.query_params.get('fuel_type', None)
+        transmission = self.request.query_params.get('transmission', None)
+        min_price = self.request.query_params.get('min_price', None)
+        max_price = self.request.query_params.get('max_price', None)
+
+
+        # Start with all vehicles
+        queryset = Vehicle.objects.all()
+
+        # Apply filters based on parameters
+        if make:
+            queryset = queryset.filter(vehicle_make=make)
+        if fuel_type:
+            queryset = queryset.filter(fuel_type=fuel_type)
+        if transmission:
+            queryset = queryset.filter(transmission=transmission)
+        if min_price and max_price:
+            queryset = queryset.filter(vehicle_price__range=(min_price, max_price))
+
+        return queryset
 
 #---------------------------------------------
 
