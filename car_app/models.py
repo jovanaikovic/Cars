@@ -41,8 +41,15 @@ class Vehicle(models.Model):
         ('7','7'),
         ('11', '11'),
     ]
+    STATUS_CHOICES = [
+        ('pending', 'pending'),
+        ('approved', 'approved'),
+        ('denied', 'denied'),
+    ]
 
     image = models.ImageField(upload_to='vehicle_images', null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    video_url = models.URLField(null=True)
     vehicle_make = models.CharField(max_length=100)
     vehicle_model = models.CharField(max_length=100)
     year_of_manufacturing = models.PositiveIntegerField()

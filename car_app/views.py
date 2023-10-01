@@ -5,20 +5,19 @@ from .models import Vehicle
 from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 
-#Cheapest car for the right side banner
-class CheapestCarView(generics.RetrieveAPIView):
-    queryset = Vehicle.objects.all().order_by('vehicle_price').first() 
-    serializer_class = VehicleSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    lookup_field = 'pk'
-    def get_object(self):
-        return self.queryset
-#----------------------------------------
+# #Cheapest car for the right side banner
+# class CheapestCarView(generics.RetrieveAPIView):
+#     queryset = Vehicle.objects.all().order_by('vehicle_price').first() 
+#     serializer_class = VehicleSerializer
+#     permission_classes = [IsAuthenticatedOrReadOnly]
+#     lookup_field = 'pk'
+#     def get_object(self):
+#         return self.queryset
+# #----------------------------------------
 
 #Newest 10 cars for the home page slider
 class NewestCarsView(generics.ListAPIView):
@@ -29,7 +28,6 @@ class NewestCarsView(generics.ListAPIView):
 
 #All cars created on the website
 class VehicleList(generics.ListAPIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = VehicleSerializer
 
@@ -40,7 +38,6 @@ class VehicleList(generics.ListAPIView):
         transmission = self.request.query_params.get('transmission', None)
         min_price = self.request.query_params.get('min_price', None)
         max_price = self.request.query_params.get('max_price', None)
-
 
         # Start with all vehicles
         queryset = Vehicle.objects.all()
@@ -60,7 +57,6 @@ class VehicleList(generics.ListAPIView):
 
 #Vehicle details, who created it and patch / delete options, unauthorized is read only
 class VehicleDetail(APIView):
-    authentication_classes = [SessionAuthentication] 
     permission_classes = [IsAuthenticatedOrReadOnly]
     def get(self, request, pk):
         try:
@@ -151,8 +147,6 @@ class UserCreateView(generics.CreateAPIView):
     
 #Not sure if post will be defined here still, but staying for now
 class VehicleCreateView(generics.CreateAPIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
-    permission_classes = [IsAuthenticated]
     serializer_class = VehicleSerializer
 
     def perform_create(self, serializer):

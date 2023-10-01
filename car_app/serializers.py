@@ -20,6 +20,8 @@ class VehicleSerializer(serializers.ModelSerializer):
             "vehicle_price",
             "seat_number",
             "owner",
+            "video_url",
+            "status",
         ]
 
 class MyUserSerializer(serializers.ModelSerializer):
