@@ -54,7 +54,6 @@ class VehicleList(generics.ListAPIView):
             queryset = queryset.filter(transmission=transmission)
         if min_price and max_price:
             queryset = queryset.filter(vehicle_price__range=(min_price, max_price))
-
         return queryset
 
 #---------------------------------------------
@@ -151,15 +150,14 @@ class UserCreateView(generics.CreateAPIView):
 #----------------------------------------------
     
 #Not sure if post will be defined here still, but staying for now
-class VehicleCreateView(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication] 
+class VehicleCreateView(generics.CreateAPIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    def post(self, request):
-        serializer = VehicleSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer_class = VehicleSerializer
+
+    def perform_create(self, serializer):
+        # Automatically set the owner to the currently logged-in user
+        serializer.save(owner=self.request.user)
 
     
     
