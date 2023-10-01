@@ -9,48 +9,57 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 
-# #Cheapest car for the right side banner
-# class CheapestCarView(generics.RetrieveAPIView):
-#     queryset = Vehicle.objects.all().order_by('vehicle_price').first() 
-#     serializer_class = VehicleSerializer
-#     permission_classes = [IsAuthenticatedOrReadOnly]
-#     lookup_field = 'pk'
-#     def get_object(self):
-#         return self.queryset
+# #Cheapest car for the right side banner, url cars/cheapest DONE!!!!!!!!!!!!
+class CheapestVehicleView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Retrieve the cheapest car based on vehicle_price
+        cheapest_car = Vehicle.objects.filter(status='approved').order_by('vehicle_price').first()
+
+        if cheapest_car is not None:
+            serializer = VehicleSerializer(cheapest_car)
+            return Response(serializer.data)
+        else:
+            return Response({'detail': 'No approved cars available'}, status=status.HTTP_404_NOT_FOUND)
 # #----------------------------------------
 
-#Newest 10 cars for the home page slider
-class NewestCarsView(generics.ListAPIView):
-    queryset = Vehicle.objects.all().order_by('-id')[:10]
+#Newest 10 cars for the home page slider, url /cars/newest DONE!!!!!!!!!!!!!
+class NewestVehicleView(generics.ListAPIView):
+    queryset = Vehicle.objects.filter(status='approved').order_by('-id')[:10]
     serializer_class = VehicleSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 #----------------------------------------
 
-#All cars created on the website
+#All cars created on the website, url /cars, DONE!!!!!!!!!!!!!!!
 class VehicleList(generics.ListAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = VehicleSerializer
 
     def get_queryset(self):
         # Retrieve filter parameters from the request
-        make = self.request.query_params.get('make', None)
         fuel_type = self.request.query_params.get('fuel_type', None)
         transmission = self.request.query_params.get('transmission', None)
         min_price = self.request.query_params.get('min_price', None)
         max_price = self.request.query_params.get('max_price', None)
+        seat_number = self.request.query_params.get('seat_number', None)
+        year_of_manufacturing = self.request.query_params.get('year_of_manufacturing', None)
+        car_body = self.request.query_params.get('car_body', None)
 
         # Start with all vehicles
-        queryset = Vehicle.objects.all()
+        queryset = Vehicle.objects.filter(status = 'approved')
 
         # Apply filters based on parameters
-        if make:
-            queryset = queryset.filter(vehicle_make=make)
         if fuel_type:
             queryset = queryset.filter(fuel_type=fuel_type)
         if transmission:
             queryset = queryset.filter(transmission=transmission)
         if min_price and max_price:
             queryset = queryset.filter(vehicle_price__range=(min_price, max_price))
+        if seat_number:
+            queryset = queryset.filter(seat_number = seat_number)
+        if year_of_manufacturing:
+            queryset = queryset.filter(year_of_manufacturing = year_of_manufacturing)
+        if car_body:
+            queryset = queryset.filter(car_body = car_body)
         return queryset
 
 #---------------------------------------------

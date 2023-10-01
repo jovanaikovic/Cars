@@ -12,6 +12,7 @@ class VehicleSerializer(serializers.ModelSerializer):
             "image",
             "vehicle_make",
             "vehicle_model",
+            "car_body",
             "year_of_manufacturing",
             "description",
             "fuel_type",

@@ -52,6 +52,7 @@ class Vehicle(models.Model):
     video_url = models.URLField(null=True)
     vehicle_make = models.CharField(max_length=100)
     vehicle_model = models.CharField(max_length=100)
+    car_body = models.CharField(max_length=15, default='Limuuzina')
     year_of_manufacturing = models.PositiveIntegerField()
     description = models.CharField(max_length=500, blank=True)
     fuel_type = models.CharField(max_length=100, choices=FUEL_CHOICES)
