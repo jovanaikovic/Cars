@@ -12,6 +12,7 @@ from rest_framework.generics import ListAPIView
 
 # #Cheapest car for the right side banner, url cars/cheapest DONE!!!!!!!!!!!!
 class CheapestVehicleView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     def get(self, request, *args, **kwargs):
         # Retrieve the cheapest car based on vehicle_price
         cheapest_car = Vehicle.objects.filter(status='approved').order_by('vehicle_price').first()
