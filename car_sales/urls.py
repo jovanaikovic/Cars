@@ -21,7 +21,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from rest_framework_simplejwt.views import TokenVerifyView
-from car_app.views import VehicleList, AdminPageView, NewestVehicleView, CheapestVehicleView
+from car_app.views import VehicleList, AdminPageView, NewestVehicleView, CheapestVehicleView, ApproveVehiclesView
 from car_app.views import VehicleDetail, UserListView, UserCreateView, VehicleCreateView
 from car_app.views import UserDetail
 from django.contrib.auth import views as auth_views
@@ -29,21 +29,21 @@ from django.contrib.auth import views as auth_views
 
 
 urlpatterns = [
-    # path('admin/', admin.site.urls),
-    path('cars/cheapest', CheapestVehicleView.as_view(), name = 'cheapest-car'),
-    path('cars/newest', NewestVehicleView.as_view(), name='newest-cars'),
-    path("api-auth/", include("rest_framework.urls")),
     #Token url-s
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     #-----------
+    path("api-auth/", include("rest_framework.urls")),
     path('cars/', VehicleList.as_view(), name='vehicle-list'),
+    path('cars/cheapest', CheapestVehicleView.as_view(), name = 'cheapest-car'),
+    path('cars/newest', NewestVehicleView.as_view(), name='newest-cars'),
+    path('cars/create', VehicleCreateView.as_view(), name='vehicle-list'),
     path('car/<int:pk>/', VehicleDetail.as_view(), name='vehicle-detail'),
-    path('user/<int:pk>/', UserDetail.as_view(), name='user-detail'),
     path('admin/', AdminPageView.as_view(), name='admin-page'),
+    path('admin/user/<int:pk>/', UserDetail.as_view(), name='user-detail'),
     path('admin/users/', UserListView.as_view(), name='admin-user-list'),
     path('admin/users/create/', UserCreateView.as_view(), name='admin-user-create'),
-    path('cars/create', VehicleCreateView.as_view(), name='vehicle-list'),
+    path('admin/cars/<int:pk>/', ApproveVehiclesView.as_view(), name = 'approve-vehicles'),
 ]
 

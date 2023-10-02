@@ -5,9 +5,10 @@ from .models import Vehicle
 from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
 from .models import MyUser
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
+from rest_framework.generics import ListAPIView
 
 # #Cheapest car for the right side banner, url cars/cheapest DONE!!!!!!!!!!!!
 class CheapestVehicleView(APIView):
@@ -64,7 +65,7 @@ class VehicleList(generics.ListAPIView):
 
 #---------------------------------------------
 
-#Vehicle details, who created it and patch / delete options, unauthorized is read only
+#Vehicle details, who created it and patch / delete options, unauthorized is read only, DONE!!!!!
 class VehicleDetail(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     def get(self, request, pk):
@@ -98,20 +99,29 @@ class VehicleDetail(APIView):
 #------------------------------------
 
 #Shows all cars one user created, should be a full user view to return also the data about the user itself.
-#Should be invisible to non authorized user.
+#Should be invisible to non authorized user.  DONE!!!!!!!!!!!!
 class UserDetail(APIView):
     def get(self, request, pk):
         try:
-            user = MyUser.objects.get(pk=pk)
-            user_serializer = MyUserSerializer(user)
+            user = MyUser.objects.get(pk=pk)   
+            # Check if the user making the request is the superadmin or the owner of the profile
+            if not request.user.is_superuser and request.user != user:
+                raise PermissionDenied("You don't have permission to view this user's details.")
+            user_serializer = MyUserSerializer(user)          
+            # Check if the requested user is the same as the logged-in user
+            is_own_profile = request.user == user
             vehicles = Vehicle.objects.filter(owner=user)
             vehicle_serializer = VehicleSerializer(vehicles, many=True)
-            return Response({
-                'vehicles': vehicle_serializer.data
-            })
+            response_data = {
+                'user': user_serializer.data,
+                'vehicles': vehicle_serializer.data,
+            }
+            # Include additional user information if it's the own profile
+            if is_own_profile:
+                response_data['is_own_profile'] = True
+            return Response(response_data)
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
     def delete(self, request, *args, **kwargs):
         if not request.user.is_superuser:
             raise PermissionDenied("You don't have permission to delete users.")
@@ -134,14 +144,21 @@ class AdminPageView(generics.ListCreateAPIView):
 #---------------------------------------------
 
 #List of all users, should be visible only to logged in users, on normal
-#users list admin shouldnt be visible
-class UserListView(generics.ListAPIView):
-    queryset = get_user_model().objects.all()
+#users list admin shouldnt be visible DONE!!!!!!!!!!!!!!!!!
+class UserListView(ListAPIView):
     serializer_class = MyUserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        # Only return non-superuser users for regular users
+        if not self.request.user.is_superuser:
+            return get_user_model().objects.filter(is_superuser=False)
+        
+        # Return all users for superusers
+        return get_user_model().objects.all()
 #---------------------------------------------
 
-#User creation for admin
+#User creation for admin    DONE!!!!!!!!!!!!!!!!!!
 class UserCreateView(generics.CreateAPIView):
     queryset = get_user_model().objects.all()
     serializer_class = MyUserSerializer
@@ -154,15 +171,52 @@ class UserCreateView(generics.CreateAPIView):
         return super().create(request, *args, **kwargs)
 #----------------------------------------------
     
-#Not sure if post will be defined here still, but staying for now
+#Creates a vehicle, DONE!!!!!!!!!!!!
 class VehicleCreateView(generics.CreateAPIView):
     serializer_class = VehicleSerializer
 
     def perform_create(self, serializer):
         # Automatically set the owner to the currently logged-in user
         serializer.save(owner=self.request.user)
+#----------------------------------------------
 
-    
-    
+#View for vehicle approval, DONE!!!!!!!!
+class ApproveVehiclesView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, pk):
+        # Retrieve the vehicle with the specified pk and status 'pending'
+        try:
+            vehicle = Vehicle.objects.get(pk=pk, status='pending')
+            serializer = VehicleSerializer(vehicle)
+            return Response(serializer.data)
+        except Vehicle.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, pk):
+        # Check if the requester is a superuser
+        if not request.user.is_superuser:
+            raise PermissionDenied("You don't have permission to change vehicle status.")
+
+        try:
+            vehicle = Vehicle.objects.get(pk=pk, status='pending')
+        except Vehicle.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Update the status based on the request data
+        new_status = request.data.get('status', None)
+        if new_status and new_status in ['approved', 'denied']:
+            if new_status == 'denied':
+                # Delete the vehicle if status is 'denied'
+                vehicle.delete()
+                return Response({"message": "Vehicle deleted due to denial."}, status=status.HTTP_200_OK)
+            else:
+                # Update status if 'approved'
+                vehicle.status = new_status
+                vehicle.save()
+                serializer = VehicleSerializer(vehicle)
+                return Response(serializer.data)
+        else:
+            return Response({"error": "Invalid status value. Use 'approved' or 'denied'."}, status=status.HTTP_400_BAD_REQUEST)
 
 
