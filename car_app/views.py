@@ -268,5 +268,19 @@ class UpdateVehicleImageView(APIView):
         return Response({"detail": "File uploaded successfully."}, status=status.HTTP_200_OK)
 #--------------------------------
 
+class UpdateUserImageView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser]
+    file_validator = JPEGFileValidator
+
+    def patch(self, request, pk):
+        image = request.data.get("img")
+
+        try:
+            self.file_validator(image)
+        except serializers.ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response ({"detail" : "File uploaded successfully."}, status=status.HTTP_200_OK)
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer

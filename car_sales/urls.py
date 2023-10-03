@@ -19,7 +19,7 @@ from django.urls import include, path
 from rest_framework_simplejwt.views import (TokenRefreshView)
 from rest_framework_simplejwt.views import TokenVerifyView
 from car_app.views import VehicleList, AdminPageView, NewestVehicleView, CheapestVehicleView, ApproveVehiclesView
-from car_app.views import VehicleDetail, UserListView, UserCreateView, VehicleCreateView, UpdateVehicleImageView
+from car_app.views import VehicleDetail, UserListView, UserCreateView, VehicleCreateView, UpdateVehicleImageView, UpdateUserImageView
 from car_app.views import UserDetail, CustomTokenObtainPairView
 from django.contrib.auth import views
 from django.conf import settings
@@ -42,6 +42,7 @@ urlpatterns = [
     path('car/<int:pk>/update_image/', UpdateVehicleImageView.as_view(), name='update_vehicle_image'),
     path('admin/', AdminPageView.as_view(), name='admin-page'),
     path('admin/user/<int:pk>/', UserDetail.as_view(), name='user-detail'),
+    path('admin/user/<int:pk>/update_image/', UpdateUserImageView.as_view(), name= 'update_user_image'),
     path('admin/users/', UserListView.as_view(), name='admin-user-list'),
     path('admin/users/create/', UserCreateView.as_view(), name='admin-user-create'),
     path('admin/cars/<int:pk>/', ApproveVehiclesView.as_view(), name = 'approve-vehicles'),
