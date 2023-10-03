@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics, permissions
+from rest_framework import status, generics, permissions, serializers
 from .models import Vehicle
 from .serializers import VehicleSerializer
 from .serializers import MyUserSerializer
@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 from rest_framework.generics import ListAPIView
+from rest_framework.parsers import MultiPartParser, FormParser
+from PIL import Image
 
 # #Cheapest car for the right side banner, url cars/cheapest DONE!!!!!!!!!!!!
 class CheapestVehicleView(APIView):
@@ -219,5 +221,32 @@ class ApproveVehiclesView(APIView):
                 return Response(serializer.data)
         else:
             return Response({"error": "Invalid status value. Use 'approved' or 'denied'."}, status=status.HTTP_400_BAD_REQUEST)
+#-------------------------------------
 
+#JPG Validator
+class JPEGFileValidator:
+    def __call__(self, value):
+        try:
+            image = Image.open(value)
+            image.verify()  
+        except Exception as e:
+            raise serializers.ValidationError("Invalid image file. Please upload a valid JPEG photo.")
+#--------------------------------------
+
+#Vehicle image updater        
+class UpdateVehicleImageView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    parser_classes = (MultiPartParser, FormParser)
+    file_validator = JPEGFileValidator()
+
+    def patch(self, request, pk):
+        file = request.data.get("image")
+
+        try:
+            self.file_validator(file)
+        except serializers.ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"detail": "File uploaded successfully."}, status=status.HTTP_200_OK)
+#--------------------------------
 
