@@ -3,6 +3,7 @@ from car_app.models import Vehicle
 from car_app.models import MyUser
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,4 +38,12 @@ class MyUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["password"] = make_password(validated_data.get("password"))
         return super().create(validated_data)
+    
+class CustomTokenSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['is_superuser'] = user.is_superuser
+
+        return token
 

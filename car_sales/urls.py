@@ -23,7 +23,7 @@ from rest_framework_simplejwt.views import (
 from rest_framework_simplejwt.views import TokenVerifyView
 from car_app.views import VehicleList, AdminPageView, NewestVehicleView, CheapestVehicleView, ApproveVehiclesView
 from car_app.views import VehicleDetail, UserListView, UserCreateView, VehicleCreateView, UpdateVehicleImageView
-from car_app.views import UserDetail
+from car_app.views import UserDetail, CustomTokenObtainPairView
 from django.contrib.auth import views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -32,7 +32,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     #Token url-s
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     #-----------

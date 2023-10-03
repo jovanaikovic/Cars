@@ -11,6 +11,8 @@ from django.contrib.auth import get_user_model
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from PIL import Image
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenSerializer
 
 # #Cheapest car for the right side banner, url cars/cheapest DONE!!!!!!!!!!!!
 class CheapestVehicleView(APIView):
@@ -250,3 +252,5 @@ class UpdateVehicleImageView(APIView):
         return Response({"detail": "File uploaded successfully."}, status=status.HTTP_200_OK)
 #--------------------------------
 
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenSerializer
