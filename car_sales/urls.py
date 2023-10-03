@@ -15,11 +15,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path, re_path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from django.urls import include, path
+from rest_framework_simplejwt.views import (TokenRefreshView)
 from rest_framework_simplejwt.views import TokenVerifyView
 from car_app.views import VehicleList, AdminPageView, NewestVehicleView, CheapestVehicleView, ApproveVehiclesView
 from car_app.views import VehicleDetail, UserListView, UserCreateView, VehicleCreateView, UpdateVehicleImageView

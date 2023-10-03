@@ -1,10 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions, serializers
-from .models import Vehicle
-from .serializers import VehicleSerializer
-from .serializers import MyUserSerializer
-from .models import MyUser
+from .models import Vehicle, MyUser
+from .serializers import VehicleSerializer, MyUserSerializer, CustomTokenSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
@@ -12,7 +10,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from PIL import Image
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenSerializer
+from django.contrib.auth.hashers import make_password
 
 # #Cheapest car for the right side banner, url cars/cheapest DONE!!!!!!!!!!!!
 class CheapestVehicleView(APIView):
@@ -131,6 +129,24 @@ class UserDetail(APIView):
         if not request.user.is_superuser:
             raise PermissionDenied("You don't have permission to delete users.")
         return super().delete(request, *args, **kwargs)
+    def patch(self, request, pk):
+        try:
+            user = MyUser.objects.get(pk=pk)
+            # Check if the user making the request is the superadmin or the owner of the profile
+            if not request.user.is_superuser and request.user != user:
+                raise PermissionDenied("You don't have permission to update this user's profile.")
+            
+            # If the request data contains 'password', hash it before saving
+            if 'password' in request.data:
+                request.data['password'] = make_password(request.data['password'])
+            
+            serializer = MyUserSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except MyUser.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 #-------------------------------------------
 
 #Not sure why it was necesarry, but will check
