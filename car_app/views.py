@@ -296,3 +296,5 @@ class UpdateUserImageView(APIView):
         return Response ({"detail" : "File uploaded successfully."}, status=status.HTTP_200_OK)
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
+
+

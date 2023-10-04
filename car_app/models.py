@@ -65,3 +65,17 @@ class Vehicle(models.Model):
         on_delete=models.CASCADE,
         default=get_default_owner
     )
+
+class VehicleGallery(models.Model):
+    image1 = models.ImageField(upload_to='vehicle_images', null=True)
+    image2 = models.ImageField(upload_to='vehicle_images', null=True)
+    image3 = models.ImageField(upload_to='vehicle_images', null=True)
+    image4 = models.ImageField(upload_to='vehicle_images', null=True) 
+    image5 = models.ImageField(upload_to='vehicle_images', null=True)
+    image6 = models.ImageField(upload_to='vehicle_images', null=True)
+    image7 = models.ImageField(upload_to='vehicle_images', null=True)
+    vehicle = models.OneToOneField(
+        Vehicle,
+        on_delete=models.CASCADE,
+        related_name='gallery'
+    )

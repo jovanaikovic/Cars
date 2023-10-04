@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from car_app.models import Vehicle
+from car_app.models import Vehicle, VehicleGallery
 from car_app.models import MyUser
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
@@ -25,6 +25,7 @@ class VehicleSerializer(serializers.ModelSerializer):
             "video_url",
             "status",
         ]
+    
 
 class MyUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -46,4 +47,18 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
         token['is_superuser'] = user.is_superuser
 
         return token
+    
+class VehicleGallerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model =  VehicleGallery
+        fields = [
+            "image1",
+            "image2",
+            "image3",
+            "image4",
+            "image5",
+            "image6",
+            "image7",
+            "vehicle",
+        ]
 
