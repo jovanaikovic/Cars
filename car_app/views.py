@@ -1,3 +1,4 @@
+from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions, serializers
@@ -125,10 +126,21 @@ class UserDetail(APIView):
             return Response(response_data)
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-    def delete(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
-            raise PermissionDenied("You don't have permission to delete users.")
-        return super().delete(request, *args, **kwargs)
+    def get_object(self, pk):
+        try:
+            return MyUser.objects.get(pk=pk)
+        except MyUser.DoesNotExist:
+            raise Http404
+
+    def delete(self, request, pk, *args, **kwargs):
+        user = self.get_object(pk)
+
+        # Check if the requester is a superuser or the owner of the profile
+        if not request.user.is_superuser and request.user != user:
+            raise PermissionDenied("You don't have permission to delete this user.")
+
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     def patch(self, request, pk):
         try:
             user = MyUser.objects.get(pk=pk)
