@@ -46,13 +46,20 @@ class Vehicle(models.Model):
         ('approved', 'approved'),
         ('denied', 'denied'),
     ]
+    BODY_CHOICES = [
+        ('Limuzina', 'Limuzina'),
+        ('SUV','SUV'),
+        ('Karavan', 'Karavan'),
+        ('Kupe', 'Kupe'),
+        ('Kabriolet', 'Kabriolet'),
+    ]
 
     image = models.ImageField(upload_to='vehicle_images', null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     video_url = models.URLField(null=True)
     vehicle_make = models.CharField(max_length=100)
     vehicle_model = models.CharField(max_length=100)
-    car_body = models.CharField(max_length=15, default='Limuuzina')
+    car_body = models.CharField(max_length=15, choices=BODY_CHOICES, default='Limuuzina')
     year_of_manufacturing = models.PositiveIntegerField()
     description = models.CharField(max_length=500, blank=True)
     fuel_type = models.CharField(max_length=100, choices=FUEL_CHOICES)
