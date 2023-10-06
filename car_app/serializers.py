@@ -71,7 +71,7 @@ class VehicleGallerySerializer(serializers.ModelSerializer):
             vehicle_id = self.context['view'].kwargs.get('pk')
             existing_images = VehicleGallery.objects.filter(vehicle__id=vehicle_id)
         
-            if existing_images.count() >= 5:
+            if existing_images.count() >= 7:
                 raise serializers.ValidationError("Cannot add more than 5 images for a vehicle.")
         
             return data

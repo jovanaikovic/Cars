@@ -322,20 +322,20 @@ class UpdateUserImageView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
 
-class GalleryView(generics.ListCreateAPIView):
-    serializer_class = VehicleGallerySerializer
-    permission_classes = [IsAuthenticated]
+#Gallery for the modal window
+class GalleryView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
 
-    def get_queryset(self):
-        vehicle_id = self.kwargs.get('pk')
+    def get_queryset(self, vehicle_id):
         return Vehicle.objects.get(pk=vehicle_id).gallery.all()
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
+    def get(self, request, *args, **kwargs):
+        vehicle_id = kwargs.get('pk')
+        queryset = self.get_queryset(vehicle_id)
+        serializer = VehicleGallerySerializer(queryset, many=True)
         return Response(serializer.data)
 
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         vehicle_id = kwargs.get('pk')
         vehicle = Vehicle.objects.get(pk=vehicle_id)
 
@@ -343,10 +343,17 @@ class GalleryView(generics.ListCreateAPIView):
         if request.user != vehicle.owner:
             return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save(vehicle=vehicle)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Assuming the images are sent in the 'images' field
+        images = request.FILES.getlist('images')
 
+        # Iterate through each uploaded image and save it
+        for image in images:
+            serializer = VehicleGallerySerializer(data={'image': image})
+            if serializer.is_valid():
+                serializer.save(vehicle=vehicle)
+            else:
+                # Handle the case where an image fails validation
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'detail': 'Images uploaded successfully.'}, status=status.HTTP_201_CREATED)
 
