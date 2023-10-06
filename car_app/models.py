@@ -14,6 +14,7 @@ def get_default_owner():
 class MyUser(AbstractUser):
     position = models.CharField(max_length=50, blank = True, null= False)
     img = models.ImageField(upload_to='user-images', null=True)
+    email = models.EmailField(unique=True)
 
 
 
@@ -23,6 +24,7 @@ class Vehicle(models.Model):
         ('Benzin', 'Benzin'),
         ('Dizel', 'Dizel'),
         ('Električno', 'Električno'),
+        ('Hibrid', 'Hibrid'),
         # Add more choices as needed
     ]
 
@@ -74,14 +76,8 @@ class Vehicle(models.Model):
     )
 
 class VehicleGallery(models.Model):
-    image1 = models.ImageField(upload_to='vehicle_images', null=True)
-    image2 = models.ImageField(upload_to='vehicle_images', null=True)
-    image3 = models.ImageField(upload_to='vehicle_images', null=True)
-    image4 = models.ImageField(upload_to='vehicle_images', null=True) 
-    image5 = models.ImageField(upload_to='vehicle_images', null=True)
-    image6 = models.ImageField(upload_to='vehicle_images', null=True)
-    image7 = models.ImageField(upload_to='vehicle_images', null=True)
-    vehicle = models.OneToOneField(
+    image = models.ImageField(upload_to = 'vehicle_images', null=True)
+    vehicle = models.ForeignKey(
         Vehicle,
         on_delete=models.CASCADE,
         related_name='gallery'

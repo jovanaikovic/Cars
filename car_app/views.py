@@ -2,8 +2,8 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions, serializers
-from .models import Vehicle, MyUser
-from .serializers import VehicleSerializer, MyUserSerializer, CustomTokenSerializer
+from .models import Vehicle, MyUser, VehicleGallery
+from .serializers import VehicleSerializer, MyUserSerializer, CustomTokenSerializer, VehicleGallerySerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
@@ -12,32 +12,14 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from PIL import Image
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.hashers import make_password
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 
-# #Cheapest car for the right side banner, url cars/cheapest DONE!!!!!!!!!!!!
-class CheapestVehicleView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    def get(self, request, *args, **kwargs):
-        # Retrieve the cheapest car based on vehicle_price
-        cheapest_car = Vehicle.objects.filter(status='approved').order_by('vehicle_price').first()
-
-        if cheapest_car is not None:
-            serializer = VehicleSerializer(cheapest_car)
-            return Response(serializer.data)
-        else:
-            return Response({'detail': 'No approved cars available'}, status=status.HTTP_404_NOT_FOUND)
-# #----------------------------------------
-
-#Newest 10 cars for the home page slider, url /cars/newest DONE!!!!!!!!!!!!!
-class NewestVehicleView(generics.ListAPIView):
-    queryset = Vehicle.objects.filter(status='approved').order_by('-id')[:10]
-    serializer_class = VehicleSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-#----------------------------------------
-
-#All cars created on the website, url /cars, DONE!!!!!!!!!!!!!!!
+#All vehicles on the web, with different filters for viewing different data according to needs
 class VehicleList(generics.ListAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = VehicleSerializer
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         # Retrieve filter parameters from the request
@@ -48,9 +30,11 @@ class VehicleList(generics.ListAPIView):
         seat_number = self.request.query_params.get('seat_number', None)
         year_of_manufacturing = self.request.query_params.get('year_of_manufacturing', None)
         car_body = self.request.query_params.get('car_body', None)
+        status = self.request.query_params.get('status', None)
+        owner_id = self.request.query_params.get('owner', None)
 
         # Start with all vehicles
-        queryset = Vehicle.objects.filter(status = 'approved')
+        queryset = Vehicle.objects.all()
 
         # Apply filters based on parameters
         if fuel_type:
@@ -60,69 +44,164 @@ class VehicleList(generics.ListAPIView):
         if min_price and max_price:
             queryset = queryset.filter(vehicle_price__range=(min_price, max_price))
         if seat_number:
-            queryset = queryset.filter(seat_number = seat_number)
+            queryset = queryset.filter(seat_number=seat_number)
         if year_of_manufacturing:
-            queryset = queryset.filter(year_of_manufacturing = year_of_manufacturing)
+            queryset = queryset.filter(year_of_manufacturing=year_of_manufacturing)
         if car_body:
-            queryset = queryset.filter(car_body = car_body)
+            queryset = queryset.filter(car_body=car_body)
+        # Apply status filter
+        if status == 'pending':
+            queryset = queryset.filter(status='pending')
+        elif status == 'approved':
+            queryset = queryset.filter(status='approved')
+        if owner_id:
+            queryset = queryset.filter(owner__id=owner_id)
+
+
         return queryset
+    def get_cheapest_car(self):
+        # Retrieve the cheapest car based on vehicle_price
+        cheapest_car = Vehicle.objects.filter(status='approved').order_by('vehicle_price').first()
+        return cheapest_car
 
-#---------------------------------------------
+    def get_newest_cars(self):
+        # Retrieve the 10 newest cars based on id
+        newest_cars = Vehicle.objects.filter(status='approved').order_by('-id')[:10]
+        return newest_cars
 
-#Vehicle details, who created it and patch / delete options, unauthorized is read only, DONE!!!!!
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Check for specific query parameters
+        if 'cheapest' in request.query_params:
+            # Retrieve the cheapest car
+            cheapest_car = self.get_cheapest_car()
+            if cheapest_car is not None:
+                serializer = self.serializer_class(cheapest_car)
+                return Response(serializer.data)
+            else:
+                return Response({'detail': 'No approved cars available'}, status=status.HTTP_404_NOT_FOUND)
+
+        elif 'newest' in request.query_params:
+            # Retrieve the 10 newest cars
+            newest_cars = self.get_newest_cars()
+            serializer = self.serializer_class(newest_cars, many=True)
+            return Response(serializer.data)
+
+        else:
+            # Default behavior for listing all cars with pagination
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.serializer_class(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data)
+    
+    def post(self, request, *args, **kwargs):
+        # Handle the creation of a new vehicle
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            # Set the owner to the currently logged-in user
+            serializer.save(owner=self.request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#Vehicle details, getting the data of one vehicle at a time, including patch and delete functions
 class VehicleDetail(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
-    def get(self, request, pk):
+
+    def status_to_pending(self, data):
+        # Set status to "pending" if the user is not an admin
+        if not self.request.user.is_superuser:
+            data['status'] = 'pending'
+
+    def get_object(self, pk):
         try:
-            vehicle = Vehicle.objects.get(pk=pk)
+            return Vehicle.objects.get(pk=pk)
+        except Vehicle.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        vehicle = self.get_object(pk)
+        if vehicle:
             serializer = VehicleSerializer(vehicle)
             return Response(serializer.data)
-        except Vehicle.DoesNotExist:
+        else:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, pk):
-        try:
-            vehicle = Vehicle.objects.get(pk=pk)
-        except Vehicle.DoesNotExist:
+        vehicle = self.get_object(pk)
+        if not vehicle:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = VehicleSerializer(vehicle, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        # Check if the user is the owner of the vehicle or an admin
+        if request.user.is_superuser or request.user == vehicle.owner:
+            if request.user.is_superuser:
+                serializer = VehicleSerializer(vehicle, data=request.data, partial=True)
+            # Allow updating all fields except status for authenticated users
+            else:
+                allowed_fields = ['image', 'vehicle_make', 'vehicle_model', 'car_body', 'year_of_manufacturing',
+                              'description', 'fuel_type', 'transmission', 'door_count', 'seat_number', 'vehicle_price']
+                if allowed_fields:
+                    data = {key: value for key, value in request.data.items() if key in allowed_fields}
+                    self.status_to_pending(data)
+                else:
+                    return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
+                serializer = VehicleSerializer(vehicle, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'detail': 'You do not have permission to perform this action.111111'}, status=status.HTTP_403_FORBIDDEN)
+        
+
     def delete(self, request, pk):
-        try:
-            vehicle = Vehicle.objects.get(pk=pk)
-        except Vehicle.DoesNotExist:
+        vehicle = self.get_object(pk)
+        if not vehicle:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        vehicle.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-#------------------------------------
+        # Check if the user is an admin
+        if request.user.is_superuser:
+            vehicle.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
 
-#Shows all cars one user created, should be a full user view to return also the data about the user itself.
-#Should be invisible to non authorized user.  DONE!!!!!!!!!!!!
+#User details, defined delete and patch user as well
 class UserDetail(APIView):
     def get(self, request, pk):
         try:
-            user = MyUser.objects.get(pk=pk)   
+            user = MyUser.objects.get(pk=pk)
+
             # Check if the user making the request is the superadmin or the owner of the profile
-            if not request.user.is_superuser and request.user != user:
+            if not request.user.is_superuser and not (request.user == user):
                 raise PermissionDenied("You don't have permission to view this user's details.")
-            user_serializer = MyUserSerializer(user)          
-            # Check if the requested user is the same as the logged-in user
-            is_own_profile = request.user == user
-            vehicles = Vehicle.objects.filter(owner=user)
+
+            user_serializer = MyUserSerializer(user)
+
+            # Check if the requested user is the same as the logged-in user or if it's an admin
+            is_own_profile = request.user == user or request.user.is_superuser
+
+            # If the user is not an admin, filter vehicles by owner
+            if request.user.is_superuser:
+                vehicles = Vehicle.objects.all()
+            else:
+                vehicles = Vehicle.objects.filter(owner=user)
+
             vehicle_serializer = VehicleSerializer(vehicles, many=True)
+
             response_data = {
                 'user': user_serializer.data,
                 'vehicles': vehicle_serializer.data,
             }
-            # Include additional user information if it's the own profile
+
+            # Include additional user information if it's the own profile or if it's an admin
             if is_own_profile:
                 response_data['is_own_profile'] = True
+
             return Response(response_data)
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -159,7 +238,6 @@ class UserDetail(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-#-------------------------------------------
 
 #Not sure why it was necesarry, but will check
 class AdminPageView(generics.ListCreateAPIView):
@@ -174,13 +252,12 @@ class AdminPageView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save()
-#---------------------------------------------
 
-#List of all users, should be visible only to logged in users, on normal
-#users list admin shouldnt be visible DONE!!!!!!!!!!!!!!!!!
+#List of all users that exist in the database, with create function only available to admin
 class UserListView(ListAPIView):
     serializer_class = MyUserSerializer
     permission_classes = [IsAdminUser]
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         # Only return non-superuser users for regular users
@@ -189,93 +266,42 @@ class UserListView(ListAPIView):
         
         # Return all users for superusers
         return get_user_model().objects.all()
-#---------------------------------------------
-
-#User creation for admin    DONE!!!!!!!!!!!!!!!!!!
-class UserCreateView(generics.CreateAPIView):
-    queryset = get_user_model().objects.all()
-    serializer_class = MyUserSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-    def create(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
-            raise PermissionDenied("You don't have permission to create new users.")
-
-        return super().create(request, *args, **kwargs)
-#----------------------------------------------
+        
     
-#Creates a vehicle, DONE!!!!!!!!!!!!
-class VehicleCreateView(generics.CreateAPIView):
-    serializer_class = VehicleSerializer
-
-    def perform_create(self, serializer):
-        # Automatically set the owner to the currently logged-in user
-        serializer.save(owner=self.request.user)
-#----------------------------------------------
-
-#View for vehicle approval, DONE!!!!!!!!
-class ApproveVehiclesView(APIView):
-    permission_classes = [permissions.IsAdminUser]
-
-    def get(self, request, pk):
-        # Retrieve the vehicle with the specified pk and status 'pending'
-        try:
-            vehicle = Vehicle.objects.get(pk=pk, status='pending')
-            serializer = VehicleSerializer(vehicle)
-            return Response(serializer.data)
-        except Vehicle.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-    def patch(self, request, pk):
-        # Check if the requester is a superuser
+    def post(self, request, *args, **kwargs):
+        # Handle the creation of a new user
         if not request.user.is_superuser:
-            raise PermissionDenied("You don't have permission to change vehicle status.")
+            return Response("You don't have permission to create new users.")
 
-        try:
-            vehicle = Vehicle.objects.get(pk=pk, status='pending')
-        except Vehicle.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        # Update the status based on the request data
-        new_status = request.data.get('status', None)
-        if new_status and new_status in ['approved', 'denied']:
-            if new_status == 'denied':
-                # Delete the vehicle if status is 'denied'
-                vehicle.delete()
-                return Response({"message": "Vehicle deleted due to denial."}, status=status.HTTP_200_OK)
-            else:
-                # Update status if 'approved'
-                vehicle.status = new_status
-                vehicle.save()
-                serializer = VehicleSerializer(vehicle)
-                return Response(serializer.data)
-        else:
-            return Response({"error": "Invalid status value. Use 'approved' or 'denied'."}, status=status.HTTP_400_BAD_REQUEST)
-#-------------------------------------
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #JPG Validator
-class JPEGFileValidator:
-    def __call__(self, value):
-        try:
-            image = Image.open(value)
-            image.verify()  
-        except Exception as e:
-            raise serializers.ValidationError("Invalid image file. Please upload a valid JPEG photo.")
+# class JPEGFileValidator:
+#     def __call__(self, value):
+#         try:
+#             image = Image.open(value)
+#             image.verify()  
+#         except Exception as e:
+#             raise serializers.ValidationError("Invalid image file. Please upload a valid JPEG photo.")
 #--------------------------------------
 
 #Vehicle image updater        
 class UpdateVehicleImageView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = (MultiPartParser, FormParser)
-    file_validator = JPEGFileValidator()
+    # file_validator = JPEGFileValidator()
 
     def patch(self, request, pk):
         file = request.data.get("image")
 
-        try:
-            self.file_validator(file)
-        except serializers.ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # try:
+        #     self.file_validator(file)
+        # except serializers.ValidationError as e:
+        #     return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"detail": "File uploaded successfully."}, status=status.HTTP_200_OK)
 #--------------------------------
@@ -283,8 +309,7 @@ class UpdateVehicleImageView(APIView):
 class UpdateUserImageView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = [MultiPartParser, FormParser]
-    file_validator = JPEGFileValidator
-
+    #file_validator = JPEGFileValidator()
     def patch(self, request, pk):
         image = request.data.get("img")
 
@@ -296,5 +321,32 @@ class UpdateUserImageView(APIView):
         return Response ({"detail" : "File uploaded successfully."}, status=status.HTTP_200_OK)
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
+
+class GalleryView(generics.ListCreateAPIView):
+    serializer_class = VehicleGallerySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        vehicle_id = self.kwargs.get('pk')
+        return Vehicle.objects.get(pk=vehicle_id).gallery.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        vehicle_id = kwargs.get('pk')
+        vehicle = Vehicle.objects.get(pk=vehicle_id)
+
+        # Check if the user has permission to add images to this vehicle
+        if request.user != vehicle.owner:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save(vehicle=vehicle)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

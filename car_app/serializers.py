@@ -1,3 +1,5 @@
+import imghdr
+from django.forms import ValidationError
 from rest_framework import serializers
 from car_app.models import Vehicle, VehicleGallery
 from car_app.models import MyUser
@@ -5,7 +7,16 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+def validate_image(value):
+    # Check if the uploaded file is a valid image (PNG or JPEG)
+    valid_types = ('png', 'jpeg')
+    image_type = imghdr.what(None, h=value.read())
+    
+    if image_type not in valid_types:
+        raise ValidationError("Only PNG and JPEG images are supported.")
+
 class VehicleSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(validators=[validate_image])
     class Meta:
         model = Vehicle
         fields = [
@@ -52,13 +63,16 @@ class VehicleGallerySerializer(serializers.ModelSerializer):
     class Meta:
         model =  VehicleGallery
         fields = [
-            "image1",
-            "image2",
-            "image3",
-            "image4",
-            "image5",
-            "image6",
-            "image7",
-            "vehicle",
+            "image",
+            "id",
         ]
+        def validate(self, data):
+        # Ensure that the number of images is at most 5
+            vehicle_id = self.context['view'].kwargs.get('pk')
+            existing_images = VehicleGallery.objects.filter(vehicle__id=vehicle_id)
+        
+            if existing_images.count() >= 5:
+                raise serializers.ValidationError("Cannot add more than 5 images for a vehicle.")
+        
+            return data
 
