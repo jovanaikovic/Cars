@@ -1,15 +1,13 @@
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics, permissions, serializers
-from .models import Vehicle, MyUser, VehicleGallery
+from rest_framework import status, generics
+from .models import Vehicle, MyUser
 from .serializers import VehicleSerializer, MyUserSerializer, CustomTokenSerializer, VehicleGallerySerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth import get_user_model
 from rest_framework.generics import ListAPIView
-from rest_framework.parsers import MultiPartParser, FormParser
-from PIL import Image
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.hashers import make_password
 from rest_framework.pagination import PageNumberPagination
@@ -282,6 +280,7 @@ class UserListView(ListAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)      
     
+#Custom token, sending is_superuser and user image with token
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
 

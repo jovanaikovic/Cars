@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+#Image validator
 def validate_image(value):
     # Check if the uploaded file is a valid image (PNG or JPEG)
     valid_types = ('png', 'jpeg')
@@ -15,6 +16,7 @@ def validate_image(value):
     if image_type not in valid_types:
         raise ValidationError("Only PNG and JPEG images are supported.")
 
+#Vehicle data serializer
 class VehicleSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(validators=[validate_image])
     class Meta:
@@ -37,7 +39,7 @@ class VehicleSerializer(serializers.ModelSerializer):
             "status",
         ]
     
-
+#User serializer, password defined as write only
 class MyUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     is_superuser = serializers.ReadOnlyField()
@@ -51,6 +53,7 @@ class MyUserSerializer(serializers.ModelSerializer):
         validated_data["password"] = make_password(validated_data.get("password"))
         return super().create(validated_data)
     
+#Token serializer to send additional data with it
 class CustomTokenSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -58,9 +61,9 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
         token['is_superuser'] = user.is_superuser
         image_info = {'img_url': str(user.img.url)} if user.img else None
         token['img'] = image_info
-
         return token
     
+#Gallery serializer, validation that max 5 images can be uploaded
 class VehicleGallerySerializer(serializers.ModelSerializer):
     class Meta:
         model =  VehicleGallery
@@ -75,6 +78,5 @@ class VehicleGallerySerializer(serializers.ModelSerializer):
         
             if existing_images.count() >= 7:
                 raise serializers.ValidationError("Cannot add more than 5 images for a vehicle.")
-        
             return data
 

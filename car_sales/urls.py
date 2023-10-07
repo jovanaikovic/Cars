@@ -36,8 +36,6 @@ urlpatterns = [
     path('cars/<int:pk>/gallery/', GalleryView.as_view(), name='vehicle-gallery'),
     path('users/<int:pk>/', UserDetail.as_view(), name='user-detail'),
     path('users/', UserListView.as_view(), name='admin-user-list'),
-    
-    
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

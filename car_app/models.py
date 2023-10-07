@@ -1,23 +1,21 @@
 from django.db import models
-
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
 
+#Getting the owner of the vehicle
 def get_default_owner():
     try:
         return get_user_model().objects.get(username='admin')
     except get_user_model().DoesNotExist:
         return None
 
-
-
+#User model
 class MyUser(AbstractUser):
     position = models.CharField(max_length=50, blank = True, null= False)
     img = models.ImageField(upload_to='user-images', null=True)
     email = models.EmailField(unique=True)
 
-
-
+#Vehicle model
 class Vehicle(models.Model):
 
     FUEL_CHOICES = [
@@ -25,14 +23,12 @@ class Vehicle(models.Model):
         ('Dizel', 'Dizel'),
         ('Električno', 'Električno'),
         ('Hibrid', 'Hibrid'),
-        # Add more choices as needed
     ]
 
     TRANSMISSION_CHOICES = [
         ('Automatik', 'Automatik'),
         ('Manual', 'Manual'),
         ('DSG' , 'DSG'),
-        # Add more choices as needed
     ]
 
     SEAT_CHOICES = [
@@ -48,6 +44,7 @@ class Vehicle(models.Model):
         ('approved', 'approved'),
         ('denied', 'denied'),
     ]
+
     BODY_CHOICES = [
         ('Limuzina', 'Limuzina'),
         ('SUV','SUV'),
@@ -75,6 +72,7 @@ class Vehicle(models.Model):
         default=get_default_owner
     )
 
+#Gallery model
 class VehicleGallery(models.Model):
     image = models.ImageField(upload_to = 'vehicle_images', null=True)
     vehicle = models.ForeignKey(
