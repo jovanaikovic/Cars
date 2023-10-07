@@ -283,7 +283,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 #Gallery for the modal window
 class GalleryView(generics.ListCreateAPIView):
     serializer_class = VehicleGallerySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         vehicle_id = self.kwargs.get('pk')
