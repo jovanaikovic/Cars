@@ -17,9 +17,9 @@ Including another URLconf
 from django.urls import include, path
 from rest_framework_simplejwt.views import (TokenRefreshView)
 from rest_framework_simplejwt.views import TokenVerifyView
-from car_app.views import VehicleList, AdminPageView, GalleryView
-from car_app.views import VehicleDetail, UserListView, UpdateVehicleImageView
-from car_app.views import CustomTokenObtainPairView, UserDetail, UpdateUserImageView
+from car_app.views import VehicleList, GalleryView
+from car_app.views import VehicleDetail, UserListView
+from car_app.views import CustomTokenObtainPairView, UserDetail
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -33,11 +33,8 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls")),
     path('cars/', VehicleList.as_view(), name='vehicle-list'),
     path('cars/<int:pk>/', VehicleDetail.as_view(), name='vehicle-detail'),
-    path('cars/<int:pk>/update_image/', UpdateVehicleImageView.as_view(), name='update_vehicle_image'),
     path('cars/<int:pk>/gallery/', GalleryView.as_view(), name='vehicle-gallery'),
-    path('admin/', AdminPageView.as_view(), name='admin-page'),
     path('users/<int:pk>/', UserDetail.as_view(), name='user-detail'),
-    path('users/<int:pk>/update_image/', UpdateUserImageView.as_view(), name= 'update_user_image'),
     path('users/', UserListView.as_view(), name='admin-user-list'),
     
     

@@ -239,20 +239,6 @@ class UserDetail(APIView):
         except MyUser.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-#Not sure why it was necesarry, but will check
-class AdminPageView(generics.ListCreateAPIView):
-    queryset = Vehicle.objects.all()
-    serializer_class = VehicleSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-    def get(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
-            raise PermissionDenied("You don't have permission to access this view.")
-        return super().get(request, *args, **kwargs)
-
-    def perform_create(self, serializer):
-        serializer.save()
-
 #List of all users that exist in the database, with create function only available to admin
 class UserListView(ListAPIView):
     serializer_class = MyUserSerializer
@@ -294,78 +280,26 @@ class UserListView(ListAPIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#JPG Validator
-# class JPEGFileValidator:
-#     def __call__(self, value):
-#         try:
-#             image = Image.open(value)
-#             image.verify()  
-#         except Exception as e:
-#             raise serializers.ValidationError("Invalid image file. Please upload a valid JPEG photo.")
-#--------------------------------------
-
-#Vehicle image updater        
-class UpdateVehicleImageView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    parser_classes = (MultiPartParser, FormParser)
-    # file_validator = JPEGFileValidator()
-
-    def patch(self, request, pk):
-        file = request.data.get("image")
-
-        # try:
-        #     self.file_validator(file)
-        # except serializers.ValidationError as e:
-        #     return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"detail": "File uploaded successfully."}, status=status.HTTP_200_OK)
-#--------------------------------
-
-class UpdateUserImageView(APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    parser_classes = [MultiPartParser, FormParser]
-    #file_validator = JPEGFileValidator()
-    def patch(self, request, pk):
-        image = request.data.get("img")
-
-        try:
-            self.file_validator(image)
-        except serializers.ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response ({"detail" : "File uploaded successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)      
+    
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
 
 #Gallery for the modal window
-class GalleryView(APIView):
+class GalleryView(generics.ListCreateAPIView):
     serializer_class = VehicleGallerySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         vehicle_id = self.kwargs.get('pk')
-        try:
-            # Retrieve the specified vehicle
-            vehicle = Vehicle.objects.get(pk=vehicle_id)
-            # Return the gallery related to the vehicle
-            return vehicle.gallery.all()
-        except Vehicle.DoesNotExist:
-            return []
+        return Vehicle.objects.get(pk=vehicle_id).gallery.all()
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
-    def get(self, request, *args, **kwargs):
-        # Retrieve the queryset for the gallery
-        queryset = self.get_queryset()
-        # Serialize the data
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data)
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         vehicle_id = kwargs.get('pk')
         vehicle = Vehicle.objects.get(pk=vehicle_id)
 
@@ -373,11 +307,8 @@ class GalleryView(APIView):
         if request.user != vehicle.owner:
             return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
 
-        # Modified code to handle multiple image uploads
-        serializer = self.serializer_class(data=request.data, many=True)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            # Save each image with the associated vehicle
-            for image_data in serializer.validated_data:
-                VehicleGallery.objects.create(vehicle=vehicle, **image_data)
+            serializer.save(vehicle=vehicle)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

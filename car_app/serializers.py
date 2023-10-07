@@ -56,6 +56,8 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
         token['is_superuser'] = user.is_superuser
+        image_info = {'img_url': str(user.img.url)} if user.img else None
+        token['img'] = image_info
 
         return token
     
