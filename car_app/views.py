@@ -12,6 +12,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.hashers import make_password
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 
 #All vehicles on the web, with different filters for viewing different data according to needs
 class VehicleList(generics.ListAPIView):
@@ -135,25 +136,20 @@ class VehicleDetail(APIView):
 
         # Check if the user is the owner of the vehicle or an admin
         if request.user.is_superuser or request.user == vehicle.owner:
-            if request.user.is_superuser:
-                serializer = VehicleSerializer(vehicle, data=request.data, partial=True)
-            # Allow updating all fields except status for authenticated users
-            else:
-                allowed_fields = ['image', 'vehicle_make', 'vehicle_model', 'car_body', 'year_of_manufacturing',
-                              'description', 'fuel_type', 'transmission', 'door_count', 'seat_number', 'vehicle_price']
-                if allowed_fields:
-                    data = {key: value for key, value in request.data.items() if key in allowed_fields}
-                    self.status_to_pending(data)
-                else:
-                    return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+            # Use the serializer with partial update
+            serializer = VehicleSerializer(vehicle, data=request.data, partial=True)
 
-                serializer = VehicleSerializer(vehicle, data=data, partial=True)
+            # Handle file upload separately
+            if 'image' in request.data:
+                vehicle.image = request.data['image']
+                vehicle.save()
+
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'detail': 'You do not have permission to perform this action.111111'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
         
 
     def delete(self, request, pk):
