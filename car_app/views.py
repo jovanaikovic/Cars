@@ -164,7 +164,7 @@ class VehicleDetail(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         # Check if the user is an admin
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user == vehicle.owner:
             vehicle.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
@@ -266,7 +266,24 @@ class UserListView(ListAPIView):
         
         # Return all users for superusers
         return get_user_model().objects.all()
+
+    def get_vehicle_count(self, user):
+        # Return the count of vehicles created by the user
+        return Vehicle.objects.filter(owner=user).count()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
         
+        # Get the count of vehicles for each user
+        users_with_vehicle_count = []
+        for user_data in serializer.data:
+            user = get_user_model().objects.get(pk=user_data['id'])
+            vehicle_count = self.get_vehicle_count(user)
+            user_data['vehicle_count'] = vehicle_count
+            users_with_vehicle_count.append(user_data)
+
+        return Response(users_with_vehicle_count)
     
     def post(self, request, *args, **kwargs):
         # Handle the creation of a new user
@@ -324,17 +341,30 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 #Gallery for the modal window
 class GalleryView(APIView):
-    parser_classes = (MultiPartParser, FormParser)
+    serializer_class = VehicleGallerySerializer
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self, vehicle_id):
-        return Vehicle.objects.get(pk=vehicle_id).gallery.all()
+    def get_queryset(self):
+        vehicle_id = self.kwargs.get('pk')
+        try:
+            # Retrieve the specified vehicle
+            vehicle = Vehicle.objects.get(pk=vehicle_id)
+            # Return the gallery related to the vehicle
+            return vehicle.gallery.all()
+        except Vehicle.DoesNotExist:
+            return []
 
-    def get(self, request, *args, **kwargs):
-        vehicle_id = kwargs.get('pk')
-        queryset = self.get_queryset(vehicle_id)
-        serializer = VehicleGallerySerializer(queryset, many=True)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
+    def get(self, request, *args, **kwargs):
+        # Retrieve the queryset for the gallery
+        queryset = self.get_queryset()
+        # Serialize the data
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
     def post(self, request, *args, **kwargs):
         vehicle_id = kwargs.get('pk')
         vehicle = Vehicle.objects.get(pk=vehicle_id)
@@ -343,17 +373,11 @@ class GalleryView(APIView):
         if request.user != vehicle.owner:
             return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
 
-        # Assuming the images are sent in the 'images' field
-        images = request.FILES.getlist('images')
-
-        # Iterate through each uploaded image and save it
-        for image in images:
-            serializer = VehicleGallerySerializer(data={'image': image})
-            if serializer.is_valid():
-                serializer.save(vehicle=vehicle)
-            else:
-                # Handle the case where an image fails validation
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({'detail': 'Images uploaded successfully.'}, status=status.HTTP_201_CREATED)
-
+        # Modified code to handle multiple image uploads
+        serializer = self.serializer_class(data=request.data, many=True)
+        if serializer.is_valid():
+            # Save each image with the associated vehicle
+            for image_data in serializer.validated_data:
+                VehicleGallery.objects.create(vehicle=vehicle, **image_data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
